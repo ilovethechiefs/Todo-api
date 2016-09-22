@@ -69,20 +69,6 @@ app.post('/todos', function(req, res) {
 	}, function(e) {
 		res.status(400).json(e);
 	});
-
-	// if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-	// 	return res.status(400).send();
-	// }
-
-	// body.description = body.description.trim();
-
-	// // add id field
-	// body.id = todoNextId++;
-
-	// // push body into array
-	// todos.push(body);
-
-	// res.json(body);
 });
 
 // DELETE /todos/:id
@@ -137,6 +123,18 @@ app.put('/todos/:id', function(req, res) {
 	}, function() {
 		res.status(500).send();
 	})
+});
+
+// POST /users
+
+app.post('/users', function(req, res) {
+	var body = _.pick(req.body, 'email', 'password');
+
+	db.user.create(body).then(function(user) {
+		res.json(user.toJSON());
+	}, function(e) {
+		res.status(400).json(e);
+	});
 });
 
 db.sequelize.sync().then(function() {
