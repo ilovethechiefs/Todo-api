@@ -23,6 +23,8 @@ app.get('/todos', function(req, res) {
 		where.completed = true;
 	} else if (query.hasOwnProperty('completed') && query.completed === 'false') {
 		where.completed = false;
+	} else if (query.hasOwnProperty('completed')) {
+		res.status(400).send();
 	}
 
 	if (query.hasOwnProperty('q') && query.q.length > 0) {
