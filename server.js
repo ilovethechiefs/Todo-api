@@ -19,7 +19,9 @@ app.get('/', function(req, res) {
 // GET /todos?completed=true&q=(description text)
 app.get('/todos', middleware.requireAuthentication, function(req, res) {
 	var query = req.query;
-	var where = {};
+	var where = {
+		userId: req.user.get('id')
+	};
 
 	if (query.hasOwnProperty('completed') && query.completed === 'true') {
 		where.completed = true;
@@ -50,9 +52,16 @@ app.get('/todos', middleware.requireAuthentication, function(req, res) {
 app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 
-	db.todo.findById(todoId).then(function(todo) {
-		if (!!todo) {
+	db.todo.findOne({
+		where: {
+			id: todoId,
+			userId: req.user.get('id')
+		}
+	}).then(function(todo) {
+		if (!!todo && todo.userId === req.user.get('id')) {
 			res.json(todo.toJSON());
+		} else if (!!todo && todo.userId !== req.user.get('id')) {
+			res.status(401).send();
 		} else {
 			res.status(404).send();
 		}
@@ -85,7 +94,8 @@ app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
 
 	db.todo.destroy({
 		where: {
-			id: todoId
+			id: todoId,
+			userId: req.user.get('id')
 		}
 	}).then(function(rowsDeleted) {
 		if (rowsDeleted === 0) {
@@ -116,8 +126,13 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
 		attributes.description = body.description;
 	}
 
-	db.todo.findById(todoId).then(function(todo) {
-		if (todo) {
+	db.todo.findOne({
+		where: {
+			id: todoId,
+			userId: req.user.get('id')
+		}
+	}).then(function(todo) {
+		if (!!todo) {
 			todo.update(attributes).then(function(todo) {
 				res.json(todo.toJSON());
 			}, function(e) {
@@ -128,7 +143,7 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
 		}
 	}, function() {
 		res.status(500).send();
-	})
+	});
 });
 
 // POST /users
@@ -162,7 +177,7 @@ app.post('/users/login', function (req, res) {
 	});
 });
 
-db.sequelize.sync({force: true}).then(function() {
+db.sequelize.sync().then(function() {
 	app.listen(PORT, function() {
 		console.log('Express listening on port ' + PORT + '!');
 	});
